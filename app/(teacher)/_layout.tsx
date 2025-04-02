@@ -1,20 +1,23 @@
 import { Tabs } from 'expo-router';
 import { Calendar, BookOpen, Bell, User, Users } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TeacherTabLayout() {
+  const { isDarkMode } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: isDarkMode ? '#181818' : '#ffffff', // Couleur dynamique
           borderTopWidth: 1,
-          borderTopColor: '#f1f1f1',
+          borderTopColor: isDarkMode ? '#0F0F0F' : '#f1f1f1', // Couleur dynamique
           height: 60,
           paddingBottom: 8,
         },
-        tabBarActiveTintColor: 'black',
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarActiveTintColor: isDarkMode ? '#ffffff' : '#000000', // Couleur dynamique
+        tabBarInactiveTintColor: isDarkMode ? 'grey' : '#94a3b8', // Couleur dynamique
       }}>
       <Tabs.Screen
         name="index"

@@ -1,20 +1,23 @@
 import { Tabs } from 'expo-router';
 import { Chrome as Home, Calendar, BookOpen, Bell, User } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TabLayout() {
+  const { isDarkMode } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: isDarkMode ? '#181818' : '#ffffff', 
           borderTopWidth: 1,
-          borderTopColor: '#f1f1f1',
+          borderTopColor: isDarkMode ? '#0F0F0F' : '#f1f1f1', 
           height: 60,
           paddingBottom: 8,
         },
-        tabBarActiveTintColor: '#000000',
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarActiveTintColor: isDarkMode ? '#ffffff' : '#000000',
+        tabBarInactiveTintColor: isDarkMode ? 'grey' : '#94a3b8', 
       }}>
       <Tabs.Screen
         name="index"

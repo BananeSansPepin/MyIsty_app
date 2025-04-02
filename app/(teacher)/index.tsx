@@ -1,7 +1,10 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { UserCheck, GraduationCap, Bold } from 'lucide-react-native';
+import { UserCheck, GraduationCap } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TeacherHomeScreen() {
+  const { isDarkMode } = useTheme();
+
   const classes = [
     {
       name: 'Mathématiques - 1ère année',
@@ -18,6 +21,8 @@ export default function TeacherHomeScreen() {
       total: 28,
     },
   ];
+
+  const styles = createStyles(isDarkMode);
 
   return (
     <ScrollView style={styles.container}>
@@ -47,11 +52,11 @@ export default function TeacherHomeScreen() {
 
       <View style={styles.quickActions}>
         <TouchableOpacity style={styles.actionCard}>
-          <UserCheck size={24} color="black" />
+          <UserCheck size={24} color={isDarkMode ? 'rgba(105, 6, 57, 0.52)' : '#000000'} />
           <Text style={styles.actionText}>Faire l'appel</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionCard}>
-          <GraduationCap size={24} color="black" />
+          <GraduationCap size={24} color={isDarkMode ? 'rgba(105, 6, 57, 0.52)' : '#000000'} />
           <Text style={styles.actionText}>Saisir les notes</Text>
         </TouchableOpacity>
       </View>
@@ -59,105 +64,106 @@ export default function TeacherHomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  header: {
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: 'rgb(105, 6 57)',
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  subGreeting: {
-    fontSize: 16,
-    color: '#e0e7ff',
-    marginTop: 4,
-  },
-  section: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  classCard: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  classInfo: {
-    flex: 1,
-  },
-  className: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  classTime: {
-    fontSize: 14,
-    color: 'black',
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  classRoom: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  attendanceContainer: {
-    alignItems: 'center',
-    backgroundColor: '#f1f5f9',
-    padding: 8,
-    borderRadius: 8,
-  },
-  attendanceText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'blue',
-  },
-  attendanceLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    padding: 16,
-    gap: 16,
-  },
-  actionCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  actionText: {
-    marginTop: 8,
-    color: '#1f2937',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-});
+const createStyles = (isDarkMode: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: isDarkMode ? '#181818' : '#f8fafc',
+    },
+    header: {
+      padding: 20,
+      paddingTop: 60,
+      backgroundColor: isDarkMode ? '#0F0F0F' : 'rgb(105, 6, 57)',
+    },
+    greeting: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#ffffff' : '#ffffff',
+    },
+    subGreeting: {
+      fontSize: 16,
+      color: isDarkMode ? '#d1d5db' : '#e0e7ff',
+      marginTop: 4,
+    },
+    section: {
+      padding: 16,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#ffffff' : '#1f2937',
+      marginBottom: 12,
+    },
+    classCard: {
+      backgroundColor: isDarkMode ? 'grey' : '#ffffff',
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 12,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    classInfo: {
+      flex: 1,
+    },
+    className: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#ffffff' : '#1f2937',
+    },
+    classTime: {
+      fontSize: 14,
+      color: isDarkMode ? '#d1d5db' : 'black',
+      fontWeight: 'bold',
+      marginTop: 4,
+    },
+    classRoom: {
+      fontSize: 14,
+      color: isDarkMode ? 'white' : '#64748b',
+      marginTop: 2,
+    },
+    attendanceContainer: {
+      alignItems: 'center',
+      backgroundColor: isDarkMode ? 'rgba(106, 103, 103, 0.76)' : '#f1f5f9',
+      padding: 8,
+      borderRadius: 8,
+    },
+    attendanceText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: isDarkMode ? 'rgba(105, 6, 57, 0.52)' : 'blue',
+    },
+    attendanceLabel: {
+      fontSize: 12,
+      color: isDarkMode ? '#d1d5db' : '#64748b',
+      marginTop: 2,
+    },
+    quickActions: {
+      flexDirection: 'row',
+      padding: 16,
+      gap: 16,
+    },
+    actionCard: {
+      flex: 1,
+      backgroundColor: isDarkMode ? 'grey' : '#ffffff',
+      padding: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    actionText: {
+      marginTop: 8,
+      color: isDarkMode ? '#ffffff' : '#1f2937',
+      fontSize: 14,
+      fontWeight: '500',
+    },
+  });
