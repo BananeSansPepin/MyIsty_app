@@ -2,6 +2,16 @@ import { View, Text, StyleSheet, TouchableOpacity, Switch, ScrollView } from 're
 import { User, Moon, Bell, Lock, LogOut } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import * as Notifications from 'expo-notifications';
+
+async function requestNotificationPermissions() {
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') {
+    const { status: newStatus } = await Notifications.requestPermissionsAsync();
+    return newStatus === 'granted';
+  }
+  return true;
+}
 
 export default function ProfileScreen() {
   const { logout, user } = useAuth();
@@ -43,7 +53,19 @@ export default function ProfileScreen() {
           <Switch
             trackColor={{ false: '#cbd5e1', true: 'rgba(105, 6, 57, 0.52)' }}
             thumbColor="#ffffff"
-            value={true}
+            value={true} 
+            onValueChange={async (value) => {
+              if (value) {
+                const granted = await requestNotificationPermissions();
+                if (granted) {
+                  console.log('Notifications activées');
+                } else {
+                  console.log('Permissions refusées');
+                }
+              } else {
+                console.log('Notifications désactivées');
+              }
+            }}
           />
         </View>
 
