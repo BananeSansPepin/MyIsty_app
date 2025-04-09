@@ -1,0 +1,89 @@
+FONCTIONNALITÉS IMPLÉMENTÉES DANS L'APPLICATION
+
+1. SYSTÈME D'AUTHENTIFICATION
+   - Inscription (étudiants et professeurs)
+   - Connexion avec JWT
+   - Déconnexion
+   - Protection des routes selon le rôle (étudiant/professeur)
+
+2. VUE PROFESSEUR
+   A. Tableau de Bord
+      - Statistiques générales de la classe
+      - Moyenne générale
+      - Meilleure et plus basse moyenne
+      - Nombre d'étudiants
+      - Graphique d'évolution des moyennes
+      - Liste des étudiants en difficulté (moyenne < 10)
+
+   B. Gestion des Notes
+      - Ajout de notes pour les étudiants
+      - Suppression de notes avec confirmation
+      - Visualisation des moyennes par étudiant
+      - Filtrage par classe
+
+   C. Gestion des Absences
+      - Signalement des absences
+      - Vue des absences par classe
+      - Possibilité de justifier une absence
+
+   D. Messagerie
+      - Communication avec la classe
+      - Historique des messages
+      - Affichage différencié des messages (professeur/étudiant)
+
+3. VUE ÉTUDIANT
+   A. Tableau de Bord
+      - Vue des dernières notes
+      - Moyenne générale
+      - Graphique d'évolution des notes
+      - Moyennes par matière
+
+   B. Notes
+      - Consultation des notes par matière
+      - Historique des notes
+      - Calcul automatique des moyennes
+
+   C. Absences
+      - Consultation des absences
+      - Statut des justifications
+      - Historique des absences
+
+   D. Messagerie
+      - Communication avec les professeurs
+      - Communication avec la classe
+      - Historique des conversations
+
+4. INTERFACE UTILISATEUR
+   - Design moderne et responsive
+   - Navigation par onglets
+   - Indicateurs visuels (couleurs selon les notes)
+   - Messages de confirmation/erreur
+   - Système de rafraîchissement (pull-to-refresh)
+
+5. SÉCURITÉ
+   - Authentification JWT
+   - Protection des routes
+   - Validation des données
+   - Gestion des erreurs
+   - Hashage des mots de passe
+
+6. BASE DE DONNÉES
+   Tables :
+   - Users (étudiants et professeurs)
+   - Notes
+   - Absences
+   - Messages
+   - Subjects
+
+7. API BACKEND
+   - Routes sécurisées
+   - Validation des données
+   - Gestion des erreurs
+   - Réponses formatées
+
+8. FONCTIONNALITÉS TECHNIQUES
+   - Gestion d'état avec React
+   - Navigation avec Expo Router
+   - Composants réutilisables
+   - Styles optimisés
+   - Gestion des erreurs côté client

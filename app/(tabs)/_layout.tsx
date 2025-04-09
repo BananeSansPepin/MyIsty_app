@@ -1,43 +1,86 @@
 import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useAuth } from '../../src/context/AuthContext';
+import { useEffect } from 'react';
+import { useRouter } from 'expo-router';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/auth/login');
+    }
+  }, [isLoading, user]);
+
+  if (isLoading || !user) return null;
+
+  // Rediriger l'admin vers sa page dédiée
+  if (user.role === 'admin') {
+    router.replace('/admin');
+    return null;
+  }
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
+        headerShown: true,
+        tabBarActiveTintColor: '#2196F3',
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Tableau de bord',
+          tabBarIcon: ({ color }: { color: string }) => (
+            <MaterialIcons name="dashboard" size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="schedule"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Emploi du temps',
+          tabBarIcon: ({ color }: { color: string }) => (
+            <MaterialIcons name="schedule" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="notes"
+        options={{
+          title: 'Notes',
+          tabBarIcon: ({ color }: { color: string }) => (
+            <MaterialIcons name="grade" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="absences"
+        options={{
+          title: 'Absences',
+          tabBarIcon: ({ color }: { color: string }) => (
+            <MaterialIcons name="event-busy" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="messaging"
+        options={{
+          title: 'Messagerie',
+          tabBarIcon: ({ color }: { color: string }) => (
+            <MaterialIcons name="chat" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ color }: { color: string }) => (
+            <MaterialIcons name="person" size={24} color={color} />
+          ),
         }}
       />
     </Tabs>
