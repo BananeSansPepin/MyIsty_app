@@ -102,15 +102,20 @@ export default function AbsencesScreen() {
 
         {filteredAbsences.map((absence) => (
           <Surface key={absence.id} style={styles.absenceCard}>
-            <View style={styles.absenceInfo}>
-              <Text style={styles.studentName}>{absence.student_name}</Text>
-              <Text style={styles.email}>{absence.student_email}</Text>
-              <Text style={styles.subject}>Matière: {absence.subject}</Text>
-              <Text style={styles.teacher}>Professeur: {absence.teacher_email}</Text>
-              <Text style={styles.date}>
-                Date: {new Date(absence.date).toLocaleDateString()}
-              </Text>
-            </View>
+            <Text style={styles.absenceDate}>
+              {new Date(absence.date).toLocaleString('fr-FR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Europe/Paris'
+              })}
+            </Text>
+            <Text style={styles.absenceSubject}>{absence.subject}</Text>
+            <Text style={styles.studentEmail}>
+              Étudiant : {absence.student_email}
+            </Text>
             <Button 
               mode="contained" 
               onPress={() => setDeleteAbsenceId(absence.id)}
@@ -173,31 +178,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     elevation: 2
   },
-  absenceInfo: {
-    marginBottom: 10
+  absenceDate: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4
   },
-  studentName: {
-    fontSize: 18,
-    fontWeight: 'bold'
-  },
-  email: {
+  absenceSubject: {
     fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4
+  },
+  studentEmail: {
+    fontSize: 14,
     color: '#666',
     marginBottom: 4
-  },
-  subject: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 4
-  },
-  teacher: {
-    fontSize: 14,
-    color: '#888',
-    marginBottom: 4
-  },
-  date: {
-    fontSize: 12,
-    color: '#999'
   },
   deleteButton: {
     marginTop: 8

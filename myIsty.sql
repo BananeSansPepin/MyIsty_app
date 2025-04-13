@@ -40,7 +40,7 @@ CREATE TABLE Absences (
     id INT PRIMARY KEY AUTO_INCREMENT,
     student_id INT NOT NULL,
     subject_id INT NOT NULL,
-    date DATE NOT NULL,
+    date DATETIME NOT NULL,
     validated BOOLEAN DEFAULT false,
     validated_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

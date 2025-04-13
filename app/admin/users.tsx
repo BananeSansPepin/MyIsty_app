@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Surface, Text, Button, Portal, Dialog } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Surface, Text, Button, Portal, Dialog, Searchbar } from 'react-native-paper';
 import { useAuth } from '../../src/context/AuthContext';
 import { router } from 'expo-router';
 import { api } from '../../src/services/api';
 import { User } from '../../src/types/user';
+import { theme } from '../../src/theme';
 
 type UserData = Omit<User, 'token'>;
 
 export default function UsersScreen() {
   const { user, logout } = useAuth();
   const [users, setUsers] = useState<UserData[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +26,21 @@ export default function UsersScreen() {
     fetchUsers();
   }, [user]);
 
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredUsers(users);
+    } else {
+      const filtered = users.filter(user => 
+        user.firstname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (user.class && user.class.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (user.subject && user.subject.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchQuery, users]);
+
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
@@ -30,7 +48,11 @@ export default function UsersScreen() {
       console.log('Tentative de récupération des utilisateurs...');
       const data = await api.get('/users');
       console.log('Données reçues:', data);
-      setUsers(data);
+      const sortedUsers = [...data].sort((a, b) => 
+        a.firstname.localeCompare(b.firstname, 'fr', { sensitivity: 'base' })
+      );
+      setUsers(sortedUsers);
+      setFilteredUsers(sortedUsers);
     } catch (error) {
       console.error('Erreur détaillée:', error);
       setError('Impossible de charger la liste des utilisateurs');
@@ -46,6 +68,7 @@ export default function UsersScreen() {
     try {
       await api.delete(`/users/${deleteUserId}`);
       setUsers(users.filter(u => u.id !== deleteUserId));
+      setFilteredUsers(filteredUsers.filter(u => u.id !== deleteUserId));
       setDeleteUserId(null);
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
@@ -69,26 +92,33 @@ export default function UsersScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Gestion des Utilisateurs</Text>
-        <Button 
-          mode="contained" 
-          onPress={handleLogout}
+        <Text style={styles.title}>Gestion des utilisateurs</Text>
+        <TouchableOpacity 
           style={styles.logoutButton}
-          buttonColor="#666"
+          onPress={handleLogout}
         >
-          Déconnexion
-        </Button>
+          <Text style={styles.logoutText}>Déconnexion</Text>
+        </TouchableOpacity>
       </View>
+
+      <Searchbar
+        placeholder="Rechercher un utilisateur..."
+        onChangeText={setSearchQuery}
+        value={searchQuery}
+        style={styles.searchBar}
+      />
 
       {isLoading && <Text style={styles.message}>Chargement...</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
       
       <ScrollView style={styles.scrollView}>
-        {!isLoading && users.length === 0 && (
-          <Text style={styles.message}>Aucun utilisateur trouvé</Text>
+        {!isLoading && filteredUsers.length === 0 && (
+          <Text style={styles.message}>
+            {searchQuery ? 'Aucun utilisateur trouvé' : 'Aucun utilisateur enregistré'}
+          </Text>
         )}
 
-        {users.map((userData) => (
+        {filteredUsers.map((userData) => (
           <Surface key={userData.id} style={styles.userCard}>
             <View style={styles.userInfo}>
               <Text style={styles.name}>{userData.firstname}</Text>
@@ -147,16 +177,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
-    elevation: 2
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: theme.colors.background,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold'
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.text,
   },
   logoutButton: {
-    marginLeft: 16
+    padding: 8,
+  },
+  logoutText: {
+    color: theme.colors.error,
+    fontSize: 16,
+  },
+  searchBar: {
+    margin: 16,
+    elevation: 2
   },
   scrollView: {
     flex: 1,

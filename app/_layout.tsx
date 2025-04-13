@@ -27,27 +27,59 @@ function RootLayoutNav() {
       } else {
         router.replace('/(tabs)');
       }
-    } else {
-      router.replace('/auth/login');
     }
   }, [user]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="admin" options={{ headerShown: false }} />
+      <Stack.Screen 
+        name="index"
+        options={{
+          headerShown: false,
+          animation: 'fade',
+        }}
+      />
+      <Stack.Screen 
+        name="welcome" 
+        options={{ 
+          headerShown: false,
+          animation: 'fade',
+        }} 
+      />
+      <Stack.Screen 
+        name="(tabs)" 
+        options={{ 
+          headerShown: false,
+          animation: 'fade',
+        }} 
+      />
+      <Stack.Screen 
+        name="admin" 
+        options={{ 
+          headerShown: false,
+          animation: 'fade',
+        }} 
+      />
       <Stack.Screen 
         name="auth/login" 
         options={{ 
           headerShown: true,
-          title: 'Connexion' 
+          title: 'Connexion',
+          headerStyle: {
+            backgroundColor: 'rgb(105, 6, 57)',
+          },
+          headerTintColor: '#fff',
         }} 
       />
       <Stack.Screen 
         name="auth/register" 
         options={{ 
           headerShown: true,
-          title: 'Inscription' 
+          title: 'Inscription',
+          headerStyle: {
+            backgroundColor: 'rgb(105, 6, 57)',
+          },
+          headerTintColor: '#fff',
         }} 
       />
     </Stack>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Surface, Text, Button, SegmentedButtons, TextInput, Portal, Dialog } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, ViewStyle, TextStyle } from 'react-native';
+import { Surface, Text, Button, SegmentedButtons, TextInput, Portal, Dialog, useTheme, Searchbar } from 'react-native-paper';
 import { useAuth } from '../../src/context/AuthContext';
 import { router } from 'expo-router';
 import { api } from '../../src/services/api';
+import { theme } from '../../src/theme';
 
 // Types pour la vue professeur
 type Student = {
@@ -42,6 +43,7 @@ type SubjectAverage = {
 
 export default function NotesScreen() {
   const { user } = useAuth();
+  const paperTheme = useTheme();
   
   // États communs
   const [loading, setLoading] = useState(false);
@@ -51,11 +53,15 @@ export default function NotesScreen() {
   // États pour la vue professeur
   const [selectedClass, setSelectedClass] = useState('IATIC3');
   const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [teacherNotes, setTeacherNotes] = useState<TeacherNote[]>([]);
+  const [filteredTeacherNotes, setFilteredTeacherNotes] = useState<TeacherNote[]>([]);
   const [studentAverages, setStudentAverages] = useState<StudentAverage[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // États pour la vue étudiant
   const [studentNotes, setStudentNotes] = useState<StudentNote[]>([]);
+  const [filteredStudentNotes, setFilteredStudentNotes] = useState<StudentNote[]>([]);
   const [subjectAverages, setSubjectAverages] = useState<SubjectAverage[]>([]);
 
   // États pour les dialogues
@@ -73,6 +79,34 @@ export default function NotesScreen() {
     fetchData();
   }, [selectedClass]);
 
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredStudents(students);
+      setFilteredTeacherNotes(teacherNotes);
+      setFilteredStudentNotes(studentNotes);
+    } else {
+      if (user?.role === 'teacher') {
+        const filtered = students.filter(student => 
+          student.firstname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          student.email.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredStudents(filtered);
+        
+        const filteredNotes = teacherNotes.filter(note =>
+          note.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          note.student_email.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredTeacherNotes(filteredNotes);
+      } else if (user?.role === 'student') {
+        const filteredNotes = studentNotes.filter(note =>
+          note.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          note.teacher_name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredStudentNotes(filteredNotes);
+      }
+    }
+  }, [searchQuery, students, teacherNotes, studentNotes, user?.role]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -87,14 +121,17 @@ export default function NotesScreen() {
         // Récupérer les données pour la vue professeur
         const studentsData = await api.get(`/students/${selectedClass}`);
         setStudents(studentsData);
+        setFilteredStudents(studentsData);
 
         const { notes, averages } = await api.get(`/notes/teacher/${selectedClass}`);
         setTeacherNotes(notes);
+        setFilteredTeacherNotes(notes);
         setStudentAverages(averages);
       } else if (user.role === 'student') {
         // Récupérer les données pour la vue étudiant
         const { notes, averages } = await api.get('/notes/student');
         setStudentNotes(notes);
+        setFilteredStudentNotes(notes);
         setSubjectAverages(averages);
       }
     } catch (err: any) {
@@ -162,7 +199,7 @@ export default function NotesScreen() {
   // Vue étudiant
   const renderStudentView = () => {
     // Grouper les notes par matière
-    const notesBySubject = studentNotes.reduce((acc, note) => {
+    const notesBySubject = filteredStudentNotes.reduce((acc, note) => {
       if (!acc[note.subject]) {
         acc[note.subject] = [];
       }
@@ -173,44 +210,53 @@ export default function NotesScreen() {
     return (
       <ScrollView style={styles.container}>
         <Surface style={styles.surface}>
-          <Text style={styles.title}>Mes Notes</Text>
+          <Text style={styles.title}>Mes Notes et Moyennes</Text>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
+          {success ? <Text style={styles.success}>{success}</Text> : null}
+
+          <Searchbar
+            placeholder="Rechercher par matière ou professeur..."
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={styles.searchBar}
+          />
 
           {loading ? (
             <Text style={styles.message}>Chargement...</Text>
           ) : (
             <>
-              {Object.entries(notesBySubject).map(([subject, notes]) => (
-                <Surface key={subject} style={styles.subjectCard}>
-                  <Text style={styles.subjectTitle}>{subject}</Text>
-                  
-                  {notes.map(note => (
-                    <View key={note.id} style={styles.noteContainer}>
-                      <Text style={styles.noteValue}>{note.value}/20</Text>
-                      <Text style={styles.noteDate}>
-                        {new Date(note.created_at).toLocaleDateString()}
+              {Object.entries(notesBySubject).map(([subject, notes]) => {
+                const subjectAverage = subjectAverages.find(avg => avg.subject === subject)?.average;
+                return (
+                  <View key={subject} style={styles.subjectCard}>
+                    <Surface style={styles.averageCard}>
+                      <Text style={styles.averageLabel}>Matière: {subject}</Text>
+                      <Text style={styles.averageText}>
+                        Moyenne: {subjectAverage ? Number(subjectAverage).toFixed(2) : 'N/A'}
                       </Text>
-                      <Text style={styles.teacherInfo}>
-                        {note.teacher_name}
-                      </Text>
-                    </View>
-                  ))}
-                  
-                  {subjectAverages.find(avg => avg.subject === subject) && (
-                    <Text style={styles.average}>
-                      Moyenne : {Number(subjectAverages.find(avg => avg.subject === subject)?.average).toFixed(2)}/20
-                    </Text>
-                  )}
-                </Surface>
-              ))}
+                    </Surface>
 
-              {/* Moyenne générale */}
+                    {notes.map((note) => (
+                      <Surface key={note.id} style={styles.noteCard}>
+                        <Text style={styles.noteValue}>{note.value}</Text>
+                        <Text style={styles.noteDate}>
+                          {new Date(note.created_at).toLocaleDateString()}
+                        </Text>
+                        <Text style={styles.teacherInfo}>
+                          Professeur: {note.teacher_email}
+                        </Text>
+                      </Surface>
+                    ))}
+                  </View>
+                );
+              })}
+
               {subjectAverages.length > 0 && (
                 <Surface style={styles.generalAverageCard}>
                   <Text style={styles.generalAverageTitle}>Moyenne Générale</Text>
                   <Text style={styles.generalAverageValue}>
-                    {(subjectAverages.reduce((sum, avg) => sum + Number(avg.average), 0) / subjectAverages.length).toFixed(2)}/20
+                    {(subjectAverages.reduce((acc, curr) => acc + Number(curr.average), 0) / subjectAverages.length).toFixed(2)}
                   </Text>
                 </Surface>
               )}
@@ -243,55 +289,63 @@ export default function NotesScreen() {
             style={styles.segmentedButtons}
           />
 
+          <Searchbar
+            placeholder="Rechercher un étudiant..."
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={styles.searchBar}
+          />
+
           {loading ? (
             <Text style={styles.message}>Chargement...</Text>
           ) : (
             <>
               <Text style={styles.subtitle}>Liste des Étudiants</Text>
-              {students.map((student) => (
-                <Surface key={student.id} style={styles.studentCard}>
-                  <View style={styles.studentInfo}>
-                    <Text style={styles.studentName}>{student.firstname}</Text>
-                    <Text style={styles.studentEmail}>{student.email}</Text>
-                    
-                    {teacherNotes
-                      .filter(note => note.student_email === student.email)
-                      .map(note => (
-                        <View key={note.id} style={styles.noteContainer}>
-                          <Text style={styles.noteValue}>{note.value}/20</Text>
-                          <Text style={styles.noteDate}>
-                            {new Date(note.created_at).toLocaleDateString()}
-                          </Text>
-                          <Button
-                            mode="text"
-                            textColor="#ff4444"
-                            onPress={() => confirmDeleteNote(note.id)}
-                            loading={loading}
-                          >
-                            Supprimer
-                          </Button>
-                        </View>
-                      ))
-                    }
-                    
-                    {studentAverages
-                      .find(avg => avg.student_name === student.firstname) && (
-                      <Text style={styles.average}>
-                        Moyenne : {Number(studentAverages.find(avg => avg.student_name === student.firstname)?.average).toFixed(2)}/20
-                      </Text>
-                    )}
+              {filteredStudents.map((student) => (
+                <Surface key={student.id} style={styles.studentItem}>
+                  <View style={styles.studentHeader}>
+                    <View style={styles.studentInfo}>
+                      <Text style={styles.studentName}>{student.firstname}</Text>
+                      <Text style={styles.studentEmail}>{student.email}</Text>
+                    </View>
+                    <Button
+                      mode="contained"
+                      onPress={() => {
+                        setSelectedStudent(student);
+                        setShowAddNoteDialog(true);
+                      }}
+                      style={styles.addButton}
+                    >
+                      Ajouter une note
+                    </Button>
                   </View>
                   
-                  <Button
-                    mode="contained"
-                    onPress={() => {
-                      setSelectedStudent(student);
-                      setShowAddNoteDialog(true);
-                    }}
-                    style={styles.addButton}
-                  >
-                    Ajouter une note
-                  </Button>
+                  {filteredTeacherNotes
+                    .filter(note => note.student_email === student.email)
+                    .map(note => (
+                      <View key={note.id} style={styles.noteItem}>
+                        <Text style={styles.noteValue}>{note.value}/20</Text>
+                        <Text style={styles.noteDate}>
+                          {new Date(note.created_at).toLocaleDateString()}
+                        </Text>
+                        <Button
+                          mode="text"
+                          textColor="#ff4444"
+                          onPress={() => confirmDeleteNote(note.id)}
+                          loading={loading}
+                        >
+                          Supprimer
+                        </Button>
+                      </View>
+                    ))
+                  }
+                  
+                  {studentAverages
+                    .find(avg => avg.student_name === student.firstname) && (
+                    <Text style={styles.studentAverage}>
+                      Moyenne : {Number(studentAverages.find(avg => avg.student_name === student.firstname)?.average).toFixed(2)}/20
+                    </Text>
+                  )}
                 </Surface>
               ))}
             </>
@@ -362,138 +416,175 @@ export default function NotesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5'
-  },
+    backgroundColor: theme.colors.background,
+  } as ViewStyle,
   surface: {
-    margin: 16,
-    padding: 16,
-    borderRadius: 10,
-    elevation: 4
-  },
+    flex: 1,
+    padding: theme.spacing.lg,
+  } as ViewStyle,
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20
-  },
+    fontSize: theme.typography.h2.fontSize,
+    fontWeight: theme.typography.h2.fontWeight,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.lg,
+  } as TextStyle,
   subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10
-  },
+    fontSize: theme.typography.h3.fontSize,
+    fontWeight: theme.typography.h3.fontWeight,
+    color: theme.colors.text,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+  } as TextStyle,
   label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5
-  },
+    fontSize: theme.typography.body1.fontSize,
+    fontWeight: theme.typography.body1.fontWeight,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  } as TextStyle,
   segmentedButtons: {
-    marginBottom: 20
-  },
-  studentCard: {
+    marginBottom: theme.spacing.lg,
+  } as ViewStyle,
+  studentItem: {
+    flexDirection: 'column',
     padding: 16,
-    marginBottom: 16,
+    backgroundColor: theme.colors.surface,
     borderRadius: 8,
-    elevation: 2
-  },
-  subjectCard: {
-    padding: 16,
-    marginBottom: 16,
-    borderRadius: 8,
-    elevation: 2
-  },
-  subjectTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
     marginBottom: 12,
-    color: '#2196F3'
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  studentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
   studentInfo: {
-    marginBottom: 10
+    flex: 1,
   },
   studentName: {
-    fontSize: 18,
-    fontWeight: 'bold'
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text,
+    marginBottom: 4,
   },
   studentEmail: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 8
+    color: theme.colors.textSecondary,
   },
-  noteContainer: {
+  studentAverage: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: theme.colors.primary,
+  },
+  notesContainer: {
+    marginTop: 8,
+  },
+  noteItem: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 4,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee'
+    padding: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  noteCard: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: theme.colors.surface,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   noteValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 10,
-    minWidth: 50
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.text,
   },
   noteDate: {
-    fontSize: 14,
-    color: '#666',
-    flex: 1
-  },
-  teacherInfo: {
-    fontSize: 14,
-    color: '#666',
-    fontStyle: 'italic'
-  },
-  average: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2196F3',
-    marginTop: 8
-  },
-  generalAverageCard: {
-    padding: 16,
-    marginTop: 16,
-    borderRadius: 8,
-    elevation: 2,
-    backgroundColor: '#2196F3'
-  },
-  generalAverageTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center'
-  },
-  generalAverageValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-    marginTop: 8
-  },
-  addButton: {
-    marginTop: 8
+    fontSize: 12,
+    color: theme.colors.textSecondary,
   },
   error: {
-    color: '#ff4444',
-    textAlign: 'center',
-    marginBottom: 10
-  },
+    color: theme.colors.error,
+    marginBottom: theme.spacing.md,
+  } as TextStyle,
   success: {
-    color: '#00C851',
-    textAlign: 'center',
-    marginBottom: 10
-  },
+    color: theme.colors.success,
+    marginBottom: theme.spacing.md,
+  } as TextStyle,
   message: {
+    color: theme.colors.text,
     textAlign: 'center',
-    fontSize: 16,
-    color: '#666',
-    marginTop: 20
+  } as TextStyle,
+  subjectCard: {
+    marginBottom: theme.spacing.lg,
+  } as ViewStyle,
+  addButton: {
+    marginLeft: 8,
+    alignSelf: 'flex-start',
   },
   dialogStudent: {
-    marginBottom: 16,
-    fontSize: 16
-  },
+    marginBottom: theme.spacing.md,
+    fontSize: theme.typography.body1.fontSize,
+    color: theme.colors.text,
+  } as TextStyle,
   input: {
-    marginBottom: 10
-  }
+    marginBottom: theme.spacing.md,
+  } as ViewStyle & TextStyle,
+  generalAverageCard: {
+    padding: theme.spacing.md,
+    borderRadius: theme.roundness,
+    backgroundColor: theme.colors.primary,
+    marginTop: theme.spacing.lg,
+  } as ViewStyle,
+  generalAverageTitle: {
+    fontSize: theme.typography.h3.fontSize,
+    fontWeight: theme.typography.h3.fontWeight,
+    color: theme.colors.surface,
+    textAlign: 'center',
+  } as TextStyle,
+  generalAverageValue: {
+    fontSize: theme.typography.h1.fontSize,
+    fontWeight: theme.typography.h1.fontWeight,
+    color: theme.colors.surface,
+    textAlign: 'center',
+    marginTop: theme.spacing.sm,
+  } as TextStyle,
+  averageCard: {
+    padding: theme.spacing.md,
+    borderRadius: theme.roundness,
+    backgroundColor: theme.colors.primary,
+    marginBottom: theme.spacing.sm,
+  } as ViewStyle,
+  averageLabel: {
+    fontSize: theme.typography.body1.fontSize,
+    fontWeight: 'bold',
+    color: theme.colors.surface,
+    textAlign: 'center',
+    marginBottom: theme.spacing.xs,
+  } as TextStyle,
+  averageText: {
+    fontSize: theme.typography.body1.fontSize,
+    fontWeight: theme.typography.body1.fontWeight,
+    color: theme.colors.surface,
+    textAlign: 'center',
+  } as TextStyle,
+  teacherInfo: {
+    fontSize: theme.typography.body1.fontSize,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+  } as TextStyle,
+  searchBar: {
+    marginVertical: 16,
+    elevation: 2,
+    backgroundColor: theme.colors.surface,
+  },
 });

@@ -467,10 +467,13 @@ app.post('/api/absences', authenticateToken, async (req, res) => {
 
         const { studentId, subjectId, date } = req.body;
 
+        // Convertir la date ISO en format MySQL (YYYY-MM-DD HH:MM:SS)
+        const mysqlDate = new Date(date).toISOString().slice(0, 19).replace('T', ' ');
+
         // Ajouter l'absence
         await pool.execute(
             'INSERT INTO Absences (student_id, subject_id, date, validated_by) VALUES (?, ?, ?, ?)',
-            [studentId, subjectId, date, req.user.id]
+            [studentId, subjectId, mysqlDate, req.user.id]
         );
 
         res.status(201).json({ message: 'Absence ajoutée avec succès' });
@@ -489,10 +492,17 @@ app.get('/api/absences/student', authenticateToken, async (req, res) => {
         }
 
         const [absences] = await pool.execute(`
-            SELECT a.*, s.name as subject_name, u.email as teacher_email
+            SELECT 
+                a.id,
+                a.date,
+                s.name as subject_name,
+                u.email as teacher_email,
+                st.firstname as student_name,
+                st.email as student_email
             FROM Absences a
             JOIN Subjects s ON a.subject_id = s.id
             JOIN Users u ON s.teacher_id = u.id
+            JOIN Users st ON a.student_id = st.id
             WHERE a.student_id = ?
             ORDER BY a.date DESC
         `, [req.user.id]);

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Surface, Text, Button, SegmentedButtons, Portal, Dialog } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, ViewStyle, TextStyle } from 'react-native';
+import { Surface, Text, Button, SegmentedButtons, Portal, Dialog, useTheme, Searchbar } from 'react-native-paper';
 import { useAuth } from '../../src/context/AuthContext';
 import { router } from 'expo-router';
 import { api } from '../../src/services/api';
+import { theme } from '../../src/theme';
 
 // Types
 type Student = {
@@ -24,6 +25,7 @@ type Absence = {
 
 export default function AbsencesScreen() {
   const { user } = useAuth();
+  const paperTheme = useTheme();
   
   // États communs
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,8 @@ export default function AbsencesScreen() {
   // États pour la vue professeur
   const [selectedClass, setSelectedClass] = useState('IATIC3');
   const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // États pour la vue étudiant
   const [absences, setAbsences] = useState<Absence[]>([]);
@@ -49,6 +53,18 @@ export default function AbsencesScreen() {
     fetchData();
   }, [selectedClass]);
 
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredStudents(students);
+    } else {
+      const filtered = students.filter((student: Student) => 
+        student.firstname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredStudents(filtered);
+    }
+  }, [searchQuery, students]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -62,7 +78,12 @@ export default function AbsencesScreen() {
       if (user.role === 'teacher') {
         // Récupérer la liste des étudiants de la classe sélectionnée
         const studentsData = await api.get(`/students/${selectedClass}`);
-        setStudents(studentsData);
+        // Trier les étudiants par ordre alphabétique
+        const sortedStudents = studentsData.sort((a: Student, b: Student) => 
+          a.firstname.localeCompare(b.firstname, 'fr', { sensitivity: 'base' })
+        );
+        setStudents(sortedStudents);
+        setFilteredStudents(sortedStudents);
       } else if (user.role === 'student') {
         // Récupérer l'historique des absences de l'étudiant
         const absencesData = await api.get('/absences/student');
@@ -90,10 +111,14 @@ export default function AbsencesScreen() {
         return;
       }
       
+      // Créer une date en heure locale
+      const now = new Date();
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+      
       await api.post('/absences', {
         studentId: selectedStudent.id,
         subjectId: subjectResponse.id,
-        date: new Date().toISOString().split('T')[0] // Date du jour
+        date: localDate.toISOString()
       });
 
       setSuccess('Absence enregistrée avec succès');
@@ -126,7 +151,14 @@ export default function AbsencesScreen() {
                 absences.map((absence) => (
                   <Surface key={absence.id} style={styles.absenceCard}>
                     <Text style={styles.absenceDate}>
-                      {new Date(absence.date).toLocaleDateString()}
+                      {new Date(absence.date).toLocaleString('fr-FR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone: 'Europe/Paris'
+                      })}
                     </Text>
                     <Text style={styles.absenceSubject}>{absence.subject_name}</Text>
                     <Text style={styles.teacherEmail}>
@@ -164,12 +196,19 @@ export default function AbsencesScreen() {
             style={styles.segmentedButtons}
           />
 
+          <Searchbar
+            placeholder="Rechercher un étudiant..."
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={styles.searchBar}
+          />
+
           {loading ? (
             <Text style={styles.message}>Chargement...</Text>
           ) : (
             <>
               <Text style={styles.subtitle}>Liste des Étudiants</Text>
-              {students.map((student) => (
+              {filteredStudents.map((student) => (
                 <Surface key={student.id} style={styles.studentCard}>
                   <View style={styles.studentInfo}>
                     <Text style={styles.studentName}>{student.firstname}</Text>
@@ -226,90 +265,125 @@ export default function AbsencesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5'
-  },
+    backgroundColor: theme.colors.background,
+  } as ViewStyle,
   surface: {
-    margin: 16,
-    padding: 16,
-    borderRadius: 10,
-    elevation: 4
-  },
+    margin: theme.spacing.md,
+    padding: theme.spacing.lg,
+    borderRadius: theme.roundness,
+    backgroundColor: theme.colors.surface,
+    elevation: 4,
+    shadowColor: theme.colors.cardShadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  } as ViewStyle,
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    ...theme.typography.h2,
     textAlign: 'center',
-    marginBottom: 20
-  },
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.lg,
+  } as TextStyle,
   subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10
-  },
+    ...theme.typography.h3,
+    color: theme.colors.text,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+  } as TextStyle,
   label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5
-  },
+    ...theme.typography.body1,
+    fontWeight: 'bold' as const,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  } as TextStyle,
   segmentedButtons: {
-    marginBottom: 20
+    marginBottom: theme.spacing.lg,
+  } as ViewStyle,
+  searchBar: {
+    marginVertical: 16,
+    elevation: 2,
+    backgroundColor: theme.colors.surface,
   },
   studentCard: {
-    padding: 16,
-    marginBottom: 16,
-    borderRadius: 8,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    borderRadius: theme.roundness,
+    backgroundColor: theme.colors.surface,
     elevation: 2,
+    shadowColor: theme.colors.cardShadow,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
-  },
+    alignItems: 'center',
+  } as ViewStyle,
   studentInfo: {
-    flex: 1
-  },
+    flex: 1,
+  } as ViewStyle,
   studentName: {
-    fontSize: 18,
-    fontWeight: 'bold'
-  },
+    ...theme.typography.h3,
+    color: theme.colors.text,
+  } as TextStyle,
   studentEmail: {
-    fontSize: 14,
-    color: '#666'
-  },
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+  } as TextStyle,
   absentButton: {
-    marginLeft: 16
-  },
+    marginLeft: theme.spacing.md,
+    borderRadius: theme.roundness,
+  } as ViewStyle,
   absenceCard: {
-    padding: 16,
-    marginBottom: 16,
-    borderRadius: 8,
-    elevation: 2
-  },
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    borderRadius: theme.roundness,
+    backgroundColor: theme.colors.surface,
+    elevation: 2,
+    shadowColor: theme.colors.cardShadow,
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+  } as ViewStyle,
   absenceDate: {
-    fontSize: 16,
-    fontWeight: 'bold'
-  },
+    ...theme.typography.h3,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.xs,
+  } as TextStyle,
   absenceSubject: {
-    fontSize: 16,
-    marginVertical: 4
-  },
+    ...theme.typography.body1,
+    color: theme.colors.text,
+    marginVertical: theme.spacing.xs,
+  } as TextStyle,
   teacherEmail: {
-    fontSize: 14,
-    color: '#666',
-    fontStyle: 'italic'
-  },
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    fontStyle: 'italic' as const,
+  } as TextStyle,
   error: {
-    color: '#ff4444',
+    ...theme.typography.body1,
+    color: theme.colors.error,
     textAlign: 'center',
-    marginBottom: 10
-  },
+    marginBottom: theme.spacing.md,
+  } as TextStyle,
   success: {
-    color: '#00C851',
+    ...theme.typography.body1,
+    color: theme.colors.success,
     textAlign: 'center',
-    marginBottom: 10
-  },
+    marginBottom: theme.spacing.md,
+  } as TextStyle,
   message: {
+    ...theme.typography.body1,
     textAlign: 'center',
-    fontSize: 16,
-    color: '#666',
-    marginTop: 20
-  }
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xl,
+  } as TextStyle,
 });

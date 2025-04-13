@@ -26,7 +26,25 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: true,
-        tabBarActiveTintColor: '#2196F3',
+        tabBarActiveTintColor: '#FFFFFF',
+        tabBarInactiveTintColor: '#FFFFFF80',
+        tabBarStyle: {
+          backgroundColor: 'rgb(105, 6, 57)',
+          borderTopWidth: 0,
+          elevation: 0,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        headerStyle: {
+          backgroundColor: 'rgb(105, 6, 57)',
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        headerTintColor: '#FFFFFF',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
       }}
     >
       <Tabs.Screen
@@ -52,7 +70,7 @@ export default function TabLayout() {
         options={{
           title: 'Notes',
           tabBarIcon: ({ color }: { color: string }) => (
-            <MaterialIcons name="grade" size={24} color={color} />
+            <MaterialIcons name="school" size={24} color={color} />
           ),
         }}
       />

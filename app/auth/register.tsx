@@ -108,8 +108,18 @@ export default function RegisterScreen() {
           <Text style={styles.label}>Rôle :</Text>
           <RadioButton.Group onValueChange={value => setRole(value)} value={role}>
             <View style={styles.radioContainer}>
-              <RadioButton.Item label="Étudiant" value="student" />
-              <RadioButton.Item label="Professeur" value="teacher" />
+              <RadioButton.Item 
+                label="Étudiant" 
+                value="student" 
+                color="rgb(105, 6, 57)"
+                uncheckedColor="rgb(105, 6, 57)"
+              />
+              <RadioButton.Item 
+                label="Professeur" 
+                value="teacher" 
+                color="rgb(105, 6, 57)"
+                uncheckedColor="rgb(105, 6, 57)"
+              />
             </View>
           </RadioButton.Group>
 

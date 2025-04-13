@@ -146,29 +146,33 @@ export default function DashboardScreen() {
               <Card.Content>
                 <Title>Statistiques de la classe</Title>
                 <View style={styles.statsGrid}>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>
-                      {Number(dashboardData.classStats?.averageClass || 0).toFixed(2)}
-                    </Text>
-                    <Text style={styles.statLabel}>Moyenne générale</Text>
+                  <View style={styles.statsRow}>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>
+                        {Number(dashboardData.classStats?.averageClass || 0).toFixed(2)}
+                      </Text>
+                      <Text style={styles.statLabel}>Moyenne générale</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>
+                        {Number(dashboardData.classStats?.bestAverage || 0).toFixed(2)}
+                      </Text>
+                      <Text style={styles.statLabel}>Meilleure moyenne</Text>
+                    </View>
                   </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>
-                      {Number(dashboardData.classStats?.bestAverage || 0).toFixed(2)}
-                    </Text>
-                    <Text style={styles.statLabel}>Meilleure moyenne</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>
-                      {Number(dashboardData.classStats?.lowestAverage || 0).toFixed(2)}
-                    </Text>
-                    <Text style={styles.statLabel}>Plus basse moyenne</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>
-                      {dashboardData.classStats?.studentsCount || 0}
-                    </Text>
-                    <Text style={styles.statLabel}>Étudiants</Text>
+                  <View style={styles.statsRow}>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>
+                        {Number(dashboardData.classStats?.lowestAverage || 0).toFixed(2)}
+                      </Text>
+                      <Text style={styles.statLabel}>Plus basse moyenne</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>
+                        {dashboardData.classStats?.studentsCount || 0}
+                      </Text>
+                      <Text style={styles.statLabel}>Étudiants</Text>
+                    </View>
                   </View>
                 </View>
               </Card.Content>
@@ -181,7 +185,7 @@ export default function DashboardScreen() {
                   <Title>Évolution des moyennes</Title>
                   <LineChart
                     data={{
-                      labels: dashboardData.notesTimeline.dates,
+                      labels: dashboardData.notesTimeline.dates.map(() => ''),
                       datasets: [{
                         data: dashboardData.notesTimeline.values
                       }]
@@ -189,13 +193,19 @@ export default function DashboardScreen() {
                     width={Dimensions.get('window').width - 40}
                     height={220}
                     chartConfig={{
-                      backgroundColor: '#ffffff',
-                      backgroundGradientFrom: '#ffffff',
-                      backgroundGradientTo: '#ffffff',
+                      backgroundColor: theme.colors.surface,
+                      backgroundGradientFrom: theme.colors.surface,
+                      backgroundGradientTo: theme.colors.surface,
                       decimalPlaces: 1,
-                      color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
+                      color: (opacity = 1) => theme.colors.primary,
+                      labelColor: (opacity = 1) => theme.colors.text,
                       style: {
                         borderRadius: 16
+                      },
+                      propsForDots: {
+                        r: "6",
+                        strokeWidth: "2",
+                        stroke: theme.colors.primary
                       }
                     }}
                     bezier
@@ -205,30 +215,38 @@ export default function DashboardScreen() {
               </Card>
             )}
 
-            {/* Liste des étudiants en difficulté */}
-            <Card style={styles.card}>
-              <Card.Content>
-                <Title>Étudiants à suivre</Title>
-                {dashboardData.studentsAtRisk?.map((student) => (
-                  <View key={student.id} style={styles.studentItem}>
-                    <View style={styles.studentInfo}>
-                      <Text style={styles.studentName}>{student.name}</Text>
-                      <Text style={styles.studentAverage}>
-                        Moyenne: {student.average.toFixed(2)}
-                      </Text>
+            {/* Liste des étudiants à suivre */}
+            {dashboardData.studentsAtRisk && dashboardData.studentsAtRisk.length > 0 && (
+              <Card style={styles.card}>
+                <Card.Content>
+                  <Title>Étudiants à suivre</Title>
+                  {dashboardData.studentsAtRisk.map((student) => (
+                    <View key={student.id} style={styles.studentItem}>
+                      <View style={styles.studentInfo}>
+                        <Text style={styles.studentName}>{student.name}</Text>
+                        <Text style={styles.studentAverage}>
+                          Moyenne: {student.average !== null && student.average !== undefined ? 
+                            Number(student.average).toFixed(2) : 'Pas de notes'}
+                        </Text>
+                        <Text style={styles.notesCount}>
+                          Nombre de notes: {student.notes_count}
+                        </Text>
+                      </View>
+                      <Badge
+                        size={24}
+                        style={[
+                          styles.riskBadge,
+                          { backgroundColor: getColorForNote(student.average) }
+                        ]}
+                      >
+                        {student.average !== null && student.average !== undefined ? 
+                          Number(student.average).toFixed(1) : '-'}
+                      </Badge>
                     </View>
-                    <Badge 
-                      size={24} 
-                      style={[styles.warningBadge, { 
-                        backgroundColor: student.average < 8 ? '#F44336' : '#FFC107' 
-                      }]}
-                    >
-                      !
-                    </Badge>
-                  </View>
-                ))}
-              </Card.Content>
-            </Card>
+                  ))}
+                </Card.Content>
+              </Card>
+            )}
 
             {/* Bouton pour ajouter une note */}
             <Button 
@@ -299,7 +317,7 @@ export default function DashboardScreen() {
                 <Title>Évolution des notes</Title>
                 <LineChart
                   data={{
-                    labels: dashboardData.notesTimeline.dates,
+                    labels: dashboardData.notesTimeline.dates.map(() => ''),
                     datasets: [{
                       data: dashboardData.notesTimeline.values
                     }]
@@ -307,13 +325,19 @@ export default function DashboardScreen() {
                   width={Dimensions.get('window').width - 40}
                   height={220}
                   chartConfig={{
-                    backgroundColor: '#ffffff',
-                    backgroundGradientFrom: '#ffffff',
-                    backgroundGradientTo: '#ffffff',
+                    backgroundColor: theme.colors.surface,
+                    backgroundGradientFrom: theme.colors.surface,
+                    backgroundGradientTo: theme.colors.surface,
                     decimalPlaces: 1,
-                    color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
+                    color: (opacity = 1) => theme.colors.primary,
+                    labelColor: (opacity = 1) => theme.colors.text,
                     style: {
                       borderRadius: 16
+                    },
+                    propsForDots: {
+                      r: "6",
+                      strokeWidth: "2",
+                      stroke: theme.colors.primary
                     }
                   }}
                   bezier
@@ -367,16 +391,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    ...themeStyles.title,
+    fontSize: 20,
+    fontWeight: '900',
+    marginBottom: 16,
     color: theme.colors.primary,
   },
   welcome: {
-    ...themeStyles.subtitle,
+    fontSize: 16,
+    marginBottom: 8,
     color: theme.colors.text,
   },
   role: {
-    ...themeStyles.textSecondary,
-    color: theme.colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '900',
+    marginBottom: 16,
+    color: '#000000',
   },
   card: {
     ...themeStyles.card,
@@ -436,52 +465,73 @@ const styles = StyleSheet.create({
     marginLeft: 12
   },
   statsGrid: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  statsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginTop: theme.spacing.sm,
+    gap: 8,
   },
   statItem: {
-    width: '48%',
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
     backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.roundness,
-    marginBottom: theme.spacing.sm,
     alignItems: 'center',
-    ...themeStyles.shadow,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 14,
     fontWeight: 'bold',
     color: theme.colors.primary,
-    marginBottom: theme.spacing.xs,
   },
   statLabel: {
-    ...themeStyles.textSecondary,
-    textAlign: 'center',
+    fontSize: 12,
+    color: theme.colors.text,
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: theme.colors.primary,
   },
   studentItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 12,
     backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.roundness,
-    marginVertical: theme.spacing.xs,
-    ...themeStyles.shadow,
+    borderRadius: 8,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   studentInfo: {
     flex: 1,
   },
   studentName: {
-    ...themeStyles.text,
-    fontWeight: 'bold',
-    marginBottom: theme.spacing.xs,
+    fontSize: 14,
+    color: theme.colors.text,
   },
   studentAverage: {
-    ...themeStyles.textSecondary,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
   },
-  warningBadge: {
+  notesCount: {
+    fontSize: 12,
+    color: '#666',
+  },
+  riskBadge: {
     marginLeft: theme.spacing.sm,
   },
   addButton: {

@@ -10,12 +10,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
-  SafeAreaView
+  SafeAreaView,
+  ViewStyle,
+  TextStyle
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker'; // Assurez-vous que ce package est installé: npm install @react-native-picker/picker
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import { api } from '../../src/services/api'; // Utilisation de l'import nommé
+import { SegmentedButtons } from 'react-native-paper';
+import { theme } from '../../src/theme';
 
 type Message = {
   id: number;
@@ -29,7 +33,7 @@ const MessagingScreen = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [selectedClass, setSelectedClass] = useState<string | null>(null);
+  const [selectedClass, setSelectedClass] = useState<string>('IATIC3');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -130,16 +134,17 @@ const MessagingScreen = () => {
     >
       {user?.role === 'teacher' && (
         <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={selectedClass}
-            onValueChange={(itemValue) => setSelectedClass(itemValue)}
-            style={styles.picker}
-            prompt="Choisir une classe"
-          >
-            {allowedClasses.map(cls => (
-                 <Picker.Item key={cls} label={cls} value={cls} />
-            ))}
-          </Picker>
+          <Text style={styles.label}>Classe :</Text>
+          <SegmentedButtons
+            value={selectedClass}
+            onValueChange={setSelectedClass}
+            buttons={[
+              { value: 'IATIC3', label: 'IATIC3' },
+              { value: 'IATIC4', label: 'IATIC4' },
+              { value: 'IATIC5', label: 'IATIC5' },
+            ]}
+            style={styles.segmentedButtons}
+          />
         </View>
       )}
 
@@ -312,6 +317,15 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       padding: 20,
    },
+   segmentedButtons: {
+    marginBottom: theme.spacing.lg,
+  } as ViewStyle,
+  label: {
+    fontSize: theme.typography.body1.fontSize,
+    fontWeight: theme.typography.body1.fontWeight,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  } as TextStyle,
 });
 
 export default MessagingScreen;
